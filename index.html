@@ -1,0 +1,1843 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PIC16F18857 マトリクスLED 開発スタジオ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#070a10;
+  --panel:#0f1520;
+  --raised:#141c29;
+  --sunken:#0a0f18;
+  --line:#1c2534;
+  --line-hi:#2b3a4f;
+  --ink:#dbe4f0;
+  --muted:#8695ab;
+  --dim:#5b6879;
+  --signal:#22d3ee;
+  --signal-ink:#67e8f9;
+  --switch:#fbbf24;
+  --anode:#34d399;
+  --fault:#f87171;
+  --fault-bg:#2a0f13;
+  --warn-bg:#2a2109;
+  --ok-bg:#052e26;
+  --run-bg:#062c33;
+  --mono:"JetBrains Mono","Consolas","SFMono-Regular",Menlo,monospace;
+  --ui:"Inter","Hiragino Sans","Yu Gothic","Noto Sans JP",system-ui,sans-serif;
+  --lh:22px;
+  --pad:12px;
+  --gutter:58px;
+  --r:10px;
+  --shadow:0 1px 2px rgba(0,0,0,.5),0 10px 30px -18px rgba(0,0,0,.9);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;background:var(--bg);color:var(--ink);font-family:var(--ui);font-size:13px;
+  line-height:1.6;overflow:hidden;
+  background-image:radial-gradient(1200px 500px at 12% -10%,rgba(34,211,238,.08),transparent 60%),
+                   radial-gradient(900px 500px at 96% 108%,rgba(52,211,153,.06),transparent 60%);
+}
+h1,h2,h3{margin:0;font-weight:700;letter-spacing:.01em}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:#05080e}
+::-webkit-scrollbar-thumb{background:#25324a;border-radius:6px;border:2px solid #05080e}
+::-webkit-scrollbar-thumb:hover{background:#33455f}
+:focus-visible{outline:2px solid var(--signal);outline-offset:1px}
+.mono{font-family:var(--mono)}
+.app{height:100%;display:flex;flex-direction:column}
+
+/* ---------- header ---------- */
+.topbar{
+  flex:none;display:flex;align-items:center;gap:12px;padding:8px 12px;
+  border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,#0d1420,#0a0f18);
+}
+.brand{display:flex;align-items:center;gap:10px;flex:none}
+.brand-mark{
+  width:36px;height:36px;display:grid;place-items:center;border-radius:9px;
+  background:linear-gradient(160deg,#0e7490,#062f39);border:1px solid rgba(34,211,238,.35);
+  color:var(--signal-ink);font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.04em;
+}
+.brand-text h1{font-size:13px;line-height:1.25}
+.brand-text p{margin:0;font-family:var(--mono);font-size:9.5px;color:var(--dim)}
+.sep{width:1px;align-self:stretch;background:var(--line);flex:none}
+.tools{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.spacer{flex:1 1 auto;min-width:8px}
+
+/* ---------- buttons ---------- */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:7px;
+  border:1px solid var(--line);background:var(--raised);color:var(--ink);
+  font-family:inherit;font-size:11px;font-weight:500;cursor:pointer;
+  transition:background .14s,border-color .14s,transform .06s;white-space:nowrap;
+}
+.btn:hover{background:#1b2536;border-color:var(--line-hi)}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:linear-gradient(180deg,#0e7490,#0b5f76);border-color:rgba(34,211,238,.4);color:#e8feff;font-weight:600}
+.btn-primary:hover{background:linear-gradient(180deg,#0891b2,#0e7490)}
+.btn-danger{background:linear-gradient(180deg,#b91c1c,#8f1717);border-color:rgba(248,113,113,.4);color:#fff;font-weight:600}
+.btn-danger:hover{background:linear-gradient(180deg,#dc2626,#b91c1c)}
+.btn-ghost{background:transparent;border-color:transparent;color:var(--muted);padding:5px 8px}
+.btn-ghost:hover{background:var(--raised);border-color:var(--line);color:var(--ink)}
+select.btn{cursor:pointer}
+
+/* ---------- chips ---------- */
+.chip{
+  font-family:var(--mono);font-size:9.5px;padding:2px 7px;border-radius:5px;
+  border:1px solid var(--line);background:var(--sunken);color:var(--muted);white-space:nowrap;
+}
+.chip-ok{color:var(--anode);border-color:rgba(52,211,153,.3);background:var(--ok-bg)}
+.chip-err{color:var(--fault);border-color:rgba(248,113,113,.3);background:var(--fault-bg)}
+.chip-warn{color:var(--switch);border-color:rgba(251,191,36,.3);background:var(--warn-bg)}
+.chip-run{color:var(--signal);border-color:rgba(34,211,238,.3);background:var(--run-bg)}
+
+/* ---------- main split ---------- */
+.main{flex:1;display:flex;min-height:0}
+.editor-col{width:47%;min-width:0;display:flex;flex-direction:column;border-right:1px solid var(--line)}
+.hw-col{flex:1;min-width:0;overflow:auto;padding:12px}
+
+/* ---------- editor ---------- */
+.editor-tabs{flex:none;display:flex;align-items:flex-end;gap:4px;padding:6px 8px 0;background:var(--sunken)}
+.tab{
+  font-family:var(--mono);font-size:11px;font-weight:600;color:var(--dim);
+  padding:5px 11px;border:1px solid transparent;border-bottom:none;border-radius:7px 7px 0 0;
+  background:transparent;cursor:pointer;
+}
+.tab.active{color:var(--ink);background:var(--bg);border-color:var(--line)}
+.tab:hover:not(.active){color:var(--muted)}
+.dirty{color:var(--switch);display:none}
+.editor-body{flex:1;display:flex;min-height:0;position:relative;background:var(--sunken)}
+.gutter{width:var(--gutter);flex:none;background:#080d15;border-right:1px solid var(--line);overflow:hidden;position:relative}
+.gutter-inner{position:absolute;top:var(--pad);left:0;right:0}
+.gline{
+  height:var(--lh);font-family:var(--mono);font-size:11px;line-height:var(--lh);
+  text-align:right;padding-right:9px;color:#3d4a5f;position:relative;cursor:pointer;
+}
+.gline:hover{color:#a9bad0;background:#101724}
+.gline.err{color:var(--fault);background:rgba(42,15,19,.7);font-weight:700}
+.gline.err::before{content:"\25B6";position:absolute;left:6px;font-size:7px;color:var(--fault)}
+.gline.warn{color:var(--switch);background:rgba(42,33,9,.7);font-weight:700}
+.gline.warn::before{content:"\25B6";position:absolute;left:6px;font-size:7px;color:var(--switch)}
+.code-wrap{flex:1;position:relative;min-width:0}
+#hl-layer{position:absolute;inset:0;pointer-events:none;z-index:1;overflow:hidden}
+.hl-row{
+  position:absolute;left:0;right:0;height:var(--lh);
+  border-left:3px solid var(--fault);
+  background:linear-gradient(90deg,rgba(248,113,113,.17),rgba(248,113,113,.03) 62%,transparent);
+}
+.hl-row.warn{border-left-color:var(--switch);background:linear-gradient(90deg,rgba(251,191,36,.15),rgba(251,191,36,.03) 62%,transparent)}
+#code-editor{
+  position:absolute;inset:0;width:100%;height:100%;margin:0;border:0;outline:none;resize:none;
+  background:transparent;color:var(--ink);font-family:var(--mono);font-size:13px;line-height:var(--lh);
+  padding:var(--pad);white-space:pre;overflow:auto;tab-size:4;caret-color:var(--signal);z-index:2;
+}
+#code-editor::selection{background:rgba(34,211,238,.28)}
+#code-editor::placeholder{color:#3d4a5f}
+
+/* ---------- bottom dock ---------- */
+.dock{flex:none;height:242px;display:flex;flex-direction:column;border-top:1px solid var(--line);background:var(--sunken)}
+.dock-tabs{flex:none;display:flex;align-items:center;gap:4px;padding:6px 8px 0}
+.dock-body{flex:1;min-height:0;position:relative}
+#pane-problems{position:absolute;inset:0;overflow:auto;padding:8px 10px;display:flex;flex-direction:column;gap:5px}
+#pane-console{position:absolute;inset:0;overflow:auto;padding:8px 10px;display:none}
+.diag{display:flex;gap:9px;align-items:flex-start;padding:6px 8px;border-radius:7px;cursor:pointer;border:1px solid transparent;transition:transform .12s,background .12s}
+.diag:hover{transform:translateX(2px)}
+.diag-e{background:#1b0c10;border-color:rgba(248,113,113,.22)}
+.diag-e:hover{background:var(--fault-bg);border-color:rgba(248,113,113,.45)}
+.diag-w{background:#1b1606;border-color:rgba(251,191,36,.22)}
+.diag-w:hover{background:var(--warn-bg);border-color:rgba(251,191,36,.45)}
+.diag-loc{font-family:var(--mono);font-size:9.5px;font-weight:700;padding:2px 6px;border-radius:5px;flex:none;white-space:nowrap}
+.diag-e .diag-loc{background:#b91c1c;color:#fff}
+.diag-w .diag-loc{background:#b45309;color:#fff}
+.diag-msg{font-size:11px;line-height:1.5}
+.diag-e .diag-msg{color:#ffc9c9}
+.diag-w .diag-msg{color:#f8dfa0}
+.ok-note{padding:10px 8px;font-size:11.5px;color:var(--anode)}
+
+/* ---------- console log ---------- */
+.log{font-family:var(--mono);font-size:11.5px;line-height:1.65;white-space:pre-wrap;word-break:break-word}
+.log-time{color:#4a5768}
+.log-info{color:var(--muted)}
+.log-sys{color:var(--signal)}
+.log-ok{color:var(--anode)}
+.log-warn{color:var(--switch)}
+.log-err{color:var(--fault);font-weight:600}
+.log-src{color:#aab8cc;border-left:2px solid #26314a;padding-left:9px;display:block}
+.log-caret{color:var(--fault);font-weight:700;padding-left:9px;display:block}
+
+/* ---------- hardware cards ---------- */
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 11px;border-bottom:1px solid var(--line);background:#0c121c}
+.card-title{font-size:11.5px;font-weight:600;color:#c6d2e3}
+.card-sub{font-family:var(--mono);font-size:9.5px;color:var(--dim)}
+.card-body{padding:11px}
+
+.matrix-stage{display:flex;justify-content:center}
+.matrix-frame{position:relative;padding:14px 14px 12px 26px}
+.axis-cols{position:absolute;top:0;left:26px;right:14px;display:flex;justify-content:space-between;font-family:var(--mono);font-size:8px;color:var(--signal)}
+.axis-rows{position:absolute;top:14px;bottom:12px;left:0;display:flex;flex-direction:column;justify-content:space-between;font-family:var(--mono);font-size:8px;color:var(--anode)}
+#matrix-canvas{display:block;border-radius:7px;background:#000;box-shadow:inset 0 0 26px #000,0 0 0 1px var(--line)}
+.matrix-note{font-family:var(--mono);font-size:9.5px;color:var(--dim);text-align:center;padding:0 11px 10px}
+
+.reg{display:flex;align-items:center;gap:9px;padding:6px 9px;border-radius:7px;background:var(--sunken);border:1px solid var(--line);font-family:var(--mono);font-size:11px}
+.reg-name{font-weight:700;width:46px}
+.reg-tag{font-size:9.5px;color:var(--dim)}
+.reg-val{font-weight:700}
+.reg-bin{font-size:10px;color:var(--dim);letter-spacing:.06em}
+.reg-tris{margin-left:auto;font-size:9.5px;color:var(--dim)}
+.reg-tris b{color:#aab8cc;font-weight:400}
+.reg-stack{display:flex;flex-direction:column;gap:6px}
+.bars{margin-top:4px}
+.bars-title{font-family:var(--mono);font-size:9.5px;color:var(--muted);margin-bottom:6px}
+.bar-row{display:flex;align-items:center;gap:8px}
+.bar-label{font-family:var(--mono);font-size:9px;color:var(--anode);width:24px}
+.bar-track{height:6px;border-radius:3px;background:#141c28;overflow:hidden;flex:1;position:relative}
+.bar-fill{position:absolute;inset:0;transform:scaleX(0);transform-origin:left;background:linear-gradient(90deg,#d97706,#fbbf24);transition:transform .06s}
+.bar-unit{font-family:var(--mono);font-size:8px;color:var(--dim);width:36px;text-align:right}
+
+.sw-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+.sw{
+  position:relative;padding:8px 6px 6px;border-radius:8px;cursor:pointer;text-align:center;
+  background:linear-gradient(180deg,#0c121c,#0a0f18);border:1px solid var(--line);
+  transition:border-color .12s,background .12s,box-shadow .12s;font-family:inherit;
+}
+.sw:hover{border-color:#3b4c66}
+.sw.pressed{background:linear-gradient(180deg,#2a2109,#1b1606);border-color:var(--switch);box-shadow:0 0 0 1px rgba(251,191,36,.3),inset 0 0 14px rgba(251,191,36,.22)}
+.sw-pill{width:15px;height:15px;margin:0 auto 4px;border-radius:4px;background:#1a2231;border:1px solid #2b3a4f;border-top-color:#3b4c66;transition:background .12s,box-shadow .12s}
+.sw.pressed .sw-pill{background:var(--switch);border-color:#fde68a;box-shadow:0 0 10px var(--switch)}
+.sw-cap{display:block;font-family:var(--mono);font-size:10px;font-weight:700;color:#bcc9db}
+.sw-key{display:block;font-family:var(--mono);font-size:8.5px;color:var(--dim)}
+.hint{margin-top:10px;font-family:var(--mono);font-size:9.5px;color:var(--dim);line-height:1.8}
+
+.dip{width:252px;margin:0 auto;background:var(--sunken);border:2px solid #26314a;border-radius:9px;padding:26px 9px 9px;position:relative}
+.dip-notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:24px;height:9px;background:var(--bg);border:2px solid #26314a;border-top:none;border-radius:0 0 12px 12px}
+.dip-name{position:absolute;top:9px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:9px;color:#3d4a5f;font-weight:700;letter-spacing:.08em}
+.dip-rows{display:flex;justify-content:space-between}
+.pin-col{display:flex;flex-direction:column;gap:2px}
+.pin-col.right{text-align:right}
+.pin{font-family:var(--mono);font-size:8.5px;display:flex;gap:5px;align-items:center;transition:color .12s,text-shadow .12s}
+.pin-col.right .pin{justify-content:flex-end}
+.pin-num{width:17px;color:#3d4a5f}
+.pin.on{text-shadow:0 0 7px currentColor}
+.pin.amber{color:var(--switch)}.pin.cyan{color:var(--signal)}.pin.green{color:var(--anode)}.pin.pwr{color:var(--dim)}
+.legend{display:flex;justify-content:space-around;font-family:var(--mono);font-size:9px;color:var(--dim);padding:0 11px 10px}
+.legend b{font-weight:400}
+
+/* ---------- status bar ---------- */
+.statusbar{flex:none;height:27px;display:flex;align-items:center;gap:16px;padding:0 12px;border-top:1px solid var(--line);background:#0a0f18;font-family:var(--mono);font-size:10px;color:var(--dim)}
+.statusbar .grow{flex:1}
+#status-build{color:var(--muted)}
+
+/* ---------- modal / toast ---------- */
+.modal{display:none;position:fixed;inset:0;z-index:60;background:rgba(4,6,11,.8)}
+.modal.open{display:block}
+.modal-card{max-width:680px;margin:6vh auto;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:hidden}
+.modal-body{padding:14px;font-size:12px;line-height:1.9;color:#c6d2e3;max-height:70vh;overflow:auto}
+.modal-body h3{font-size:12px;color:var(--signal);margin:0 0 4px}
+.modal-body p{margin:0 0 12px}
+.modal-body .k{font-family:var(--mono);background:var(--sunken);border:1px solid var(--line);border-radius:4px;padding:1px 5px;font-size:11px}
+#toast{display:none;position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:70;background:var(--raised);border:1px solid var(--line-hi);border-radius:8px;padding:9px 15px;font-size:11.5px;box-shadow:var(--shadow)}
+
+@media (max-width:1180px){
+  body{overflow:auto}
+  .app{height:auto;min-height:100%}
+  .main{flex-direction:column}
+  .editor-col{width:100%;border-right:none;border-bottom:1px solid var(--line)}
+  .editor-body{min-height:340px}
+  .hw-col{padding:12px}
+  .grid{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:640px){
+  .topbar{flex-wrap:wrap}
+  .sw-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .dock{height:220px}
+}
+@media print{
+  body{background:#fff}
+  .topbar,.statusbar,.dock{display:none}
+}
+@page{size:A4;margin:16mm}
+</style>
+</head>
+<body>
+<div class="app">
+
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark">PIC</div>
+    <div class="brand-text">
+      <h1>PIC16F18857 マトリクスLED 開発スタジオ</h1>
+      <p>8x8 PARA LIGHT M0A20UB0186J ・ XC8 C シミュレータ</p>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <div class="tools">
+    <button id="file-new" class="btn" title="新規ソース (Ctrl+Alt+N)">新規</button>
+    <button id="file-open" class="btn" title=".c / .txt を読み込む (Ctrl+O)">開く</button>
+    <button id="file-save" class="btn" title="上書き保存 (Ctrl+S)">保存</button>
+    <button id="file-save-as" class="btn" title="名前を付けて保存 (Ctrl+Shift+S)">名前を付けて保存</button>
+    <button id="file-export" class="btn" title="現在のソースを .c として書き出す">.c 書き出し</button>
+    <button id="file-import" class="btn" title="端末内のファイルから読み込む">読み込み</button>
+  </div>
+
+  <div class="sep"></div>
+
+  <div class="tools">
+    <span class="mono" style="font-size:10px;color:var(--muted)">サンプル</span>
+    <select id="sample-select" class="btn">
+      <option value="__blank">0. 空のテンプレート</option>
+      <option value="default" selected>1. スイッチ切替 ダイナミック点灯</option>
+      <option value="scroll">2. 自動スクロールアニメーション</option>
+      <option value="diag">3. 回路診断スウィープテスト</option>
+      <option value="chase">4. 蛇行（チェイス）点灯</option>
+      <option value="button_draw">5. ボタンで自由描画</option>
+      <option value="error_demo">6. 構文エラーデモ（修正練習）</option>
+    </select>
+  </div>
+
+  <div class="spacer"></div>
+
+  <div class="tools">
+    <span class="chip" style="display:flex;gap:8px;align-items:center;padding:4px 9px">
+      <span style="color:var(--muted)">速度</span>
+      <input id="speed-slider" type="range" min="0.1" max="5" step="0.1" value="1" style="width:72px;accent-color:#22d3ee;cursor:pointer">
+      <span id="speed-val" style="color:var(--signal);width:32px">1.0x</span>
+    </span>
+    <button id="btn-flash" class="btn btn-primary" title="ビルドして実行 (F5)">&#x26A1; ビルド＆書き込み</button>
+    <button id="btn-run" class="btn" title="一時停止 / 再開 (Space)"><span id="run-icon">&#x25B6;</span><span id="run-text">実行</span></button>
+    <button id="btn-reset" class="btn" title="MCLR リセット (Ctrl+R)">リセット</button>
+    <button id="btn-help" class="btn btn-ghost" title="使い方" style="font-size:13px">?</button>
+  </div>
+</header>
+
+<main class="main">
+
+  <section class="editor-col">
+    <div class="editor-tabs">
+      <div class="tab active mono"><span id="tab-name">main.c</span><span id="tab-dirty" class="dirty"> &#x25CF;</span></div>
+      <div class="spacer"></div>
+      <span id="chip-syntax" class="chip chip-ok" style="margin-bottom:6px">構文チェック完了</span>
+      <span id="chip-errors" class="chip chip-err" style="display:none;margin-bottom:6px">エラー 0</span>
+    </div>
+
+    <div class="editor-body">
+      <div id="gutter" class="gutter"><div id="gutter-inner" class="gutter-inner"></div></div>
+      <div class="code-wrap">
+        <div id="hl-layer"></div>
+        <textarea id="code-editor" spellcheck="false" autocapitalize="off" autocorrect="off"
+          placeholder="ここに XC8 の C コードを入力するか、「開く」で .c ファイルを読み込んでください"></textarea>
+      </div>
+    </div>
+
+    <div class="dock">
+      <div class="dock-tabs">
+        <button id="tab-problems" class="tab active">問題 <span id="problems-count" class="mono">(0)</span></button>
+        <button id="tab-console" class="tab">ビルドログ</button>
+        <div class="spacer"></div>
+        <button id="btn-next-error" class="btn btn-ghost" style="font-size:10px">次のエラー &#x2193;</button>
+        <button id="btn-clear-problems" class="btn btn-ghost" style="font-size:10px">ログ消去</button>
+      </div>
+      <div class="dock-body">
+        <div id="pane-problems"></div>
+        <div id="pane-console"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="hw-col">
+    <div class="grid">
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">PARA LIGHT M0A20UB0186J</span>
+          <span class="card-sub">8x8 LED マトリクス</span>
+        </div>
+        <div class="matrix-stage">
+          <div class="matrix-frame">
+            <div id="label-cols" class="axis-cols"></div>
+            <div id="label-rows" class="axis-rows"></div>
+            <canvas id="matrix-canvas" width="256" height="256"></canvas>
+          </div>
+        </div>
+        <div class="matrix-note">アノード行 = PORTC（1k&#x2126; 直列 / HIGH で選択） ／ カソード列 = PORTB（直接 / LOW で導通）</div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">レジスタ・ライブモニター</span>
+          <span id="cycle-counter" class="card-sub" style="color:var(--anode)">Cycles 0</span>
+        </div>
+        <div class="card-body">
+          <div class="reg-stack">
+            <div class="reg">
+              <span class="reg-name" style="color:var(--switch)">PORTA</span>
+              <span class="reg-tag">スイッチ入力</span>
+              <span id="reg-porta-hex" class="reg-val" style="color:var(--switch)">0x00</span>
+              <span id="reg-porta-bin" class="reg-bin">00000000</span>
+              <span class="reg-tris">TRISA <b id="reg-trisa-hex">0xFF</b></span>
+            </div>
+            <div class="reg">
+              <span class="reg-name" style="color:var(--signal)">LATB</span>
+              <span class="reg-tag">カソード列</span>
+              <span id="reg-latb-hex" class="reg-val" style="color:var(--signal)">0xFF</span>
+              <span id="reg-latb-bin" class="reg-bin">11111111</span>
+              <span class="reg-tris">TRISB <b id="reg-trisb-hex">0x00</b></span>
+            </div>
+            <div class="reg">
+              <span class="reg-name" style="color:var(--anode)">LATC</span>
+              <span class="reg-tag">アノード行</span>
+              <span id="reg-latc-hex" class="reg-val" style="color:var(--anode)">0x00</span>
+              <span id="reg-latc-bin" class="reg-bin">00000000</span>
+              <span class="reg-tris">TRISC <b id="reg-trisc-hex">0x00</b></span>
+            </div>
+          </div>
+          <div class="bars">
+            <div class="bars-title">PORTC &#x2192; 1k&#x2126; 抵抗アレイ（行ドライブ電流）</div>
+            <div id="resistor-bars" class="reg-stack" style="gap:3px"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">タクトスイッチ（PORTA 入力）</span>
+          <span class="card-sub">キー 1-8 / クリックで押下</span>
+        </div>
+        <div class="card-body">
+          <div id="switches-grid" class="sw-grid"></div>
+          <div class="hint">
+            F5 ビルド＆書き込み ／ Space 一時停止・再開 ／ Ctrl+R MCLR リセット<br>
+            Ctrl+S 保存 ／ Ctrl+O 開く ／ Ctrl+Alt+N 新規 ／ Ctrl+F 次のエラー
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">PIC16F18857 (28-Pin DIP)</span>
+          <span class="card-sub">ピン状態モニター</span>
+        </div>
+        <div class="card-body" style="padding-bottom:4px">
+          <div class="dip">
+            <div class="dip-notch"></div>
+            <div class="dip-name">PIC16F18857</div>
+            <div class="dip-rows">
+              <div id="chip-pins-left" class="pin-col"></div>
+              <div id="chip-pins-right" class="pin-col right"></div>
+            </div>
+          </div>
+        </div>
+        <div class="legend">
+          <span><b style="color:var(--switch)">&#x25CF;</b> PORTA 入力</span>
+          <span><b style="color:var(--signal)">&#x25CF;</b> PORTB 列</span>
+          <span><b style="color:var(--anode)">&#x25CF;</b> PORTC 行</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</main>
+
+<footer class="statusbar">
+  <span id="status-build">未ビルド</span>
+  <span id="status-cursor">Ln 1, Col 1</span>
+  <span id="status-sel">選択 0 文字</span>
+  <span id="status-file">main.c ・ 未保存</span>
+  <span class="grow"></span>
+  <span id="status-saved" style="color:var(--anode)"></span>
+  <span>Target PIC16F18857</span>
+  <span>XC8 相当</span>
+</footer>
+
+</div>
+
+<div id="help-modal" class="modal">
+  <div class="modal-card">
+    <div class="card-head" style="padding:11px 14px">
+      <span class="card-title" style="font-size:12.5px">使い方とエラー表示の見方</span>
+      <button id="help-close" class="btn btn-ghost">閉じる</button>
+    </div>
+    <div class="modal-body">
+      <h3>1. ビルドエラーの根源を特定する</h3>
+      <p>ビルドに失敗すると、下の「問題」タブと行番号ガターに赤でエラーが出ます。項目をクリックすると、その行・列へカーソルが移動します。ビルドログには <span class="k">行:列</span> 付きで該当ソース行と <span class="k">^</span> の位置マーカーが出力されます。</p>
+      <h3>2. 検出するエラー</h3>
+      <p>文末セミコロン不足 ／ 括弧・ブレースの対応 ／ 条件式の閉じカッコ ／ 代入の右辺不足 ／ 未定義のレジスタ名（PORATA などのタイポ、存在しない PORTD など） ／ 未定義の配列・変数。</p>
+      <h3>3. ファイル操作</h3>
+      <p>「開く」で <span class="k">.c</span> / <span class="k">.txt</span> を読み込み、「保存」で上書き（ブラウザが対応していれば同じファイルへ直接書き戻し）、「名前を付けて保存」で別名保存、「.c 書き出し」でダウンロードします。編集中の内容は自動的に退避され、次回起動時に復元を確認します。</p>
+      <h3>4. シミュレータ操作</h3>
+      <p>RA0-RA7 のタクトスイッチはクリックまたはキーボード <span class="k">1</span>-<span class="k">8</span>。「速度」スライダーでダイナミックスキャンの見え方を調整できます。<span class="k">_XTAL_FREQ</span> は 32MHz としてサイクル数を計算します。</p>
+      <h3>5. 配線の前提</h3>
+      <p>PORTA = タクトスイッチ入力 ／ PORTB = カソード列に直接接続（LOW で点灯） ／ PORTC = アノード行に 1k&#x2126; を直列して接続（HIGH で点灯）。</p>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<input id="hidden-file" type="file" accept=".c,.h,.txt,.inc,text/plain" style="display:none">
+
+<script>
+"use strict";
+const PRESETS = {
+    default: String.raw`/*
+ * PIC16F18857 8x8 ドットマトリクス LED 制御
+ * 配線: PORTA=タクトスイッチ / PORTB=カソード列(直接) / PORTC=アノード行(1kΩ抵抗)
+ */
+#include <xc.h>
+#define _XTAL_FREQ 32000000
+
+const uint8_t pattern_heart[8] = {
+    0b00000000,
+    0b01100110,
+    0b11111111,
+    0b11111111,
+    0b01111110,
+    0b00111100,
+    0b00011000,
+    0b00000000
+};
+
+const uint8_t pattern_cross[8] = {
+    0b10000001,
+    0b01000010,
+    0b00100100,
+    0b00011000,
+    0b00011000,
+    0b00100100,
+    0b01000010,
+    0b10000001
+};
+
+const uint8_t pattern_circle[8] = {
+    0b00111100,
+    0b01000010,
+    0b10000001,
+    0b10000001,
+    0b10000001,
+    0b10000001,
+    0b01000010,
+    0b00111100
+};
+
+void main(void) {
+    TRISA = 0xFF;   // PORTA = 入力(スイッチ)
+    TRISB = 0x00;   // PORTB = 出力(カソード列)
+    TRISC = 0x00;   // PORTC = 出力(アノード行)
+    LATB = 0xFF;    // 全列消灯
+    LATC = 0x00;    // 全行消灯
+
+    while(1) {
+        const uint8_t *pat = pattern_circle;
+        if (PORTAbits.RA0 == 1) pat = pattern_heart;
+        else if (PORTAbits.RA1 == 1) pat = pattern_cross;
+
+        for(uint8_t row = 0; row < 8; row++) {
+            LATB = 0xFF;            // ゴースト防止
+            LATC = (1 << row);      // 行選択(HIGH)
+            LATB = ~(pat[row]);     // 列データ(LOW=点灯)
+            __delay_ms(2);
+        }
+    }
+}`,
+
+    scroll: String.raw`/* 自動パターン切り替えアニメーション (P-I-C) */
+#include <xc.h>
+#define _XTAL_FREQ 32000000
+
+const uint8_t frame_P[8] = {0x00,0x7E,0x42,0x42,0x7E,0x40,0x40,0x00};
+const uint8_t frame_I[8] = {0x00,0x3E,0x08,0x08,0x08,0x08,0x3E,0x00};
+const uint8_t frame_C[8] = {0x00,0x3C,0x42,0x40,0x40,0x42,0x3C,0x00};
+
+void display_pattern(const uint8_t data[8], uint16_t duration_ms) {
+    uint16_t loops = duration_ms / 16;
+    for(uint16_t l = 0; l < loops; l++) {
+        for(uint8_t r = 0; r < 8; r++) {
+            LATB = 0xFF;
+            LATC = (1 << r);
+            LATB = ~(data[r]);
+            __delay_ms(2);
+        }
+    }
+}
+
+void main(void) {
+    TRISA = 0xFF;
+    TRISB = 0x00;
+    TRISC = 0x00;
+    while(1) {
+        display_pattern(frame_P, 400);
+        display_pattern(frame_I, 400);
+        display_pattern(frame_C, 400);
+    }
+}`,
+
+    diag: String.raw`/* 回路診断スウィープテスト (行→列の順に確認) */
+#include <xc.h>
+#define _XTAL_FREQ 32000000
+
+void main(void) {
+    TRISA = 0xFF;
+    TRISB = 0x00;   // カソード列(直接接続)
+    TRISC = 0x00;   // アノード行(1kΩ経由)
+    while(1) {
+        for(uint8_t r = 0; r < 8; r++) {
+            LATC = (1 << r);
+            LATB = 0x00;
+            __delay_ms(60);
+        }
+        LATC = 0x00;
+        for(uint8_t c = 0; c < 8; c++) {
+            LATC = 0xFF;
+            LATB = ~(1 << c);
+            __delay_ms(60);
+        }
+        LATB = 0xFF;
+        __delay_ms(200);
+    }
+}`,
+
+    chase: String.raw`/* 蛇行(チェイス)点灯: 外周を1点が巡回 */
+#include <xc.h>
+#define _XTAL_FREQ 32000000
+
+const uint8_t chase_x[28] = {
+    0,0,0,0,0,0,0,0, 1,2,3,4,5,6,7, 7,7,7,7,7,7,7,7, 6,5,4,3,2,1
+};
+const uint8_t chase_y[28] = {
+    0,1,2,3,4,5,6,7, 7,7,7,7,7,7,7, 6,5,4,3,2,1,0,0, 0,0,0,0,0,0
+};
+
+void main(void) {
+    TRISA = 0xFF;
+    TRISB = 0x00;
+    TRISC = 0x00;
+    uint8_t pos = 0;
+    while(1) {
+        for(uint8_t row = 0; row < 8; row++) {
+            LATB = 0xFF;
+            LATC = (1 << row);
+            uint8_t col_data = 0xFF;
+            if (chase_x[pos] == row) col_data &= ~(1 << chase_y[pos]);
+            LATB = col_data;
+            __delay_ms(2);
+        }
+        static uint8_t cnt = 0;
+        cnt++;
+        if (cnt >= 6) { cnt = 0; pos++; if (pos >= 28) pos = 0; }
+    }
+}`,
+
+    button_draw: String.raw`/* ボタン自由描画: RA0-3=カーソル移動 RA6=描画トグル RA7=全消去 */
+#include <xc.h>
+#define _XTAL_FREQ 32000000
+
+uint8_t canvas[8] = {0};
+uint8_t cx = 3, cy = 3;
+
+void main(void) {
+    TRISA = 0xFF;
+    TRISB = 0x00;
+    TRISC = 0x00;
+    while(1) {
+        static uint8_t prev_a = 0;
+        uint8_t cur_a = PORTA;
+        uint8_t edge = cur_a & ~prev_a;
+        prev_a = cur_a;
+
+        if (edge & (1<<0)) { if (cx < 7) cx++; }
+        if (edge & (1<<1)) { if (cx > 0) cx--; }
+        if (edge & (1<<2)) { if (cy < 7) cy++; }
+        if (edge & (1<<3)) { if (cy > 0) cy--; }
+        if (edge & (1<<6)) { canvas[cy] ^= (1<<cx); }
+        if (edge & (1<<7)) { for(uint8_t i=0;i<8;i++) canvas[i]=0; }
+
+        static uint16_t blink = 0;
+        blink++;
+        uint8_t show_cursor = (blink & 0x40) ? 1 : 0;
+
+        for(uint8_t row=0; row<8; row++) {
+            LATB = 0xFF;
+            LATC = (1 << row);
+            uint8_t col = ~canvas[row];
+            if (row == cy && show_cursor) col &= ~(1 << cx);
+            LATB = col;
+            __delay_ms(2);
+        }
+    }
+}`,
+
+    error_demo: String.raw`/* 構文エラーデモ(修正練習用): 意図的に5件のエラーを埋め込み */
+#include <xc.h>
+#define _XTAL_FREQ 32000000
+
+void main(void) {
+    PORATAbits.RA0 = 1;
+    TRISC = 0x00
+    LATB = 0xFF;
+    if (PORTAbits.RA1 == 1 { LATC = 0xFF; }
+    LATB = ;
+    while(1) {
+        LATC = 0x01;
+        __delay_ms(100);
+`
+};
+
+
+/* =========================================================
+ * PIC16F18857 8x8 マトリクスLED シミュレータ : コアロジック
+ *  - 構文解析 (行番号・列番号つき)
+ *  - C言語 → JavaScript 変換 (行番号を保持する)
+ * ========================================================= */
+
+function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+
+var C_TYPE_RE = "(?:const\\s+)?(?:unsigned\\s+)?(?:uint8_t|int8_t|uint16_t|int16_t|uint32_t|int32_t|unsigned\\s+char|unsigned\\s+int|char|int|long)";
+var FN_RET_RE = "(?:void|int|uint8_t|int8_t|uint16_t|int16_t|uint32_t|unsigned\\s+char|unsigned\\s+int|char|long)";
+
+var C_KEYWORDS = ["if","else","for","while","do","switch","case","default","break",
+  "continue","return","goto","sizeof","struct","union","enum","typedef","static",
+  "volatile","register","extern","inline","void","const","unsigned","signed"];
+
+var REGISTER_IDENTS = ["TRISA","TRISB","TRISC","PORTA","PORTB","PORTC","LATA","LATB","LATC",
+  "ANSELA","ANSELB","ANSELC","PORTAbits","PORTBbits","PORTCbits","LATAbits","LATBbits","LATCbits",
+  "RA0","RA1","RA2","RA3","RA4","RA5","RA6","RA7",
+  "RB0","RB1","RB2","RB3","RB4","RB5","RB6","RB7",
+  "RC0","RC1","RC2","RC3","RC4","RC5","RC6","RC7",
+  "_XTAL_FREQ","__delay_ms","__delay_us","delay_ms","delay_us","main",
+  "uint8_t","uint16_t","uint32_t","int8_t","int16_t","int32_t","int","void","char","unsigned","const","static"];
+
+/* コメントを空白に置換する。行の長さを変えないので列番号がずれない。 */
+function stripLineComments(line, st){
+  var out = "", i = 0;
+  while (i < line.length){
+    if (st.inComment){
+      var e = line.indexOf("*/", i);
+      if (e === -1){ out += " ".repeat(line.length - i); i = line.length; }
+      else { out += " ".repeat(e + 2 - i); i = e + 2; st.inComment = false; }
+      continue;
+    }
+    var c = line.charAt(i);
+    if (c === "/" && line.charAt(i + 1) === "*"){ st.inComment = true; out += "  "; i += 2; continue; }
+    if (c === "/" && line.charAt(i + 1) === "/"){ break; }
+    out += c; i++;
+  }
+  return out;
+}
+
+/* ソース全体からコメントを除去した行配列を返す */
+function stripAllComments(cCode){
+  var st = { inComment: false };
+  return cCode.split("\n").map(function(l){ return stripLineComments(l, st); });
+}
+
+/* ユーザーが宣言した識別子(変数・関数・配列)を集める */
+function collectDeclared(cleanLines){
+  var declared = {};
+  C_KEYWORDS.forEach(function(k){ declared[k] = true; });
+  REGISTER_IDENTS.forEach(function(k){ declared[k] = true; });
+
+  var typeRe = new RegExp("\\b" + C_TYPE_RE + "\\s*\\*?\\s*([A-Za-z_][A-Za-z0-9_]*)", "g");
+  var fnRe = new RegExp("\\b" + FN_RET_RE + "\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*\\(", "g");
+  cleanLines.forEach(function(l){
+    var t = l.replace(/^\s*#.*$/, "");
+    var m;
+    typeRe.lastIndex = 0;
+    while ((m = typeRe.exec(t)) !== null) {
+      declared[m[1]] = true;
+      if (m.index === typeRe.lastIndex) typeRe.lastIndex++; // 無限ループ防止
+    }
+    fnRe.lastIndex = 0;
+    while ((m = fnRe.exec(t)) !== null) {
+      declared[m[1]] = true;
+      if (m.index === fnRe.lastIndex) fnRe.lastIndex++; // 無限ループ防止
+    }
+  });
+  return declared;
+}
+
+/* ============ 構文解析: 行番号・列番号つきで問題を返す ============ */
+function analyzeCSyntax(cCode){
+  var errors = [], warnings = [];
+  var lines = cCode.split("\n");
+  var cleanLines = stripAllComments(cCode);
+  var declared = collectDeclared(cleanLines);
+  var braceStack = [];
+  var parenDepth = 0;
+  var hasXtalFreq = false;
+  var delayLines = [];
+
+  for (var idx = 0; idx < lines.length; idx++){
+    var lineNum = idx + 1;
+    var code = cleanLines[idx];
+    var trimmed = code.trim();
+    if (trimmed === "") continue;
+    if (trimmed.charAt(0) === "#"){
+      if (/^#\s*define\s+_XTAL_FREQ\b/.test(trimmed)) hasXtalFreq = true;
+      continue;
+    }
+
+    var parenBefore = parenDepth;
+    var lastSig = "";
+    for (var k = 0; k < code.length; k++){
+      var ch = code.charAt(k);
+      if (ch === " " || ch === "\t" || ch === "\r") continue;
+      if (ch === "(" || ch === "[") parenDepth++;
+      else if (ch === ")" || ch === "]"){ if (parenDepth > 0) parenDepth--; }
+      else if (ch === "{"){
+        var isInit = (lastSig === "=" || lastSig === "," || lastSig === "[" );
+        braceStack.push({ line: lineNum, col: k + 1, type: isInit ? "init" : "block" });
+      } else if (ch === "}"){
+        if (braceStack.length === 0){
+          errors.push({ line: lineNum, col: k + 1, severity: "error",
+            message: "対応する '{' がない閉じカッコ '}' です。" });
+        } else { braceStack.pop(); }
+      }
+      lastSig = ch;
+    }
+    var parenAfter = parenDepth;
+    var anyInit = braceStack.some(function(b){ return b.type === "init"; });
+
+    /* --- 条件式の閉じカッコ不足 ( if ( ... { ) --- */
+    var ctrlMatch = /^(if|else\s+if|while|for|switch)\b/.exec(trimmed);
+    if (ctrlMatch){
+      var p = trimmed.indexOf("(");
+      if (p !== -1){
+        var d = 0, bad = -1, closed = false;
+        for (var j = p; j < trimmed.length; j++){
+          var cc = trimmed.charAt(j);
+          if (cc === "(") d++;
+          else if (cc === ")"){ d--; if (d === 0){ closed = true; break; } }
+          else if (cc === "{" && d > 0){ bad = j; break; }
+        }
+        var baseCol = code.length - code.replace(/^\s+/, "").length;
+        if (bad !== -1){
+          errors.push({ line: lineNum, col: baseCol + bad + 1, severity: "error",
+            message: "条件式の閉じカッコ ')' が不足しています。'{' の位置が不正です。" });
+        } else if (!closed && d > 0){
+          errors.push({ line: lineNum, col: code.replace(/\s+$/, "").length + 1, severity: "error",
+            message: "条件式の閉じカッコ ')' が不足しています。" });
+        }
+      }
+    }
+
+    /* --- 代入の右辺不足 ( = ; ) --- */
+    var emptyRhs = /=(?!=)\s*;/.exec(code);
+    if (emptyRhs){
+      errors.push({ line: lineNum, col: emptyRhs.index + 1, severity: "error",
+        message: "代入演算子 '=' の右辺の値が不足しています。" });
+    }
+
+    /* --- 未定義のレジスタ名 (タイポ検出) --- */
+    var seen = {};
+    var words = code.match(/\b[A-Za-z_][A-Za-z0-9_]*\b/g) || [];
+    words.forEach(function(w){
+      if (seen[w]) return;
+      if (!/^(PORT|LAT|TRIS|ANSEL)[A-Za-z0-9_]*$/.test(w)) return;
+      if (declared[w]) return;
+      seen[w] = true;
+      var hint = "PORTA / LATC / TRISA など";
+      if (/^PORAT/.test(w)) hint = "PORTA / PORTAbits";
+      else if (/^PORTA?D|^PORTD|^PORTE|^PORTF/.test(w)) hint = "この環境では PORTA / PORTB / PORTC のみ使用できます";
+      else if (/^TRIS[A-Z]?$/.test(w)) hint = "TRISA / TRISB / TRISC";
+      else if (/^LAT[A-Z]?$/.test(w)) hint = "LATA / LATB / LATC";
+      else if (/^ANSEL/.test(w)) hint = "ANSELA / ANSELB / ANSELC";
+      errors.push({ line: lineNum, col: code.indexOf(w) + 1, severity: "error",
+        message: "未定義のレジスタ名・識別子 '" + w + "' です。（正: " + hint + "）" });
+    });
+
+    /* --- 文末セミコロン不足 --- */
+    var isCtrl = /^(if|else|for|while|switch|case|default|do)\b/.test(trimmed);
+    var endsBrace = /[{}]$/.test(trimmed);
+    var endsOp = /[,+\-*/%&|^=<>!?:]$/.test(trimmed);
+    var endsSemi = /;$/.test(trimmed);
+    if (!isCtrl && !endsBrace && !endsOp && !endsSemi && !anyInit && !emptyRhs &&
+        parenBefore === 0 && parenAfter === 0){
+      errors.push({ line: lineNum, col: code.replace(/\s+$/, "").length + 1, severity: "error",
+        message: "文末のセミコロン ';' が不足しています。" });
+    }
+
+    /* --- 遅延関数の使用記録 --- */
+    if (/__delay_(ms|us)\s*\(/.test(code)) delayLines.push(lineNum);
+  }
+
+  /* --- 閉じられていないブロック --- */
+  while (braceStack.length > 0){
+    var b = braceStack.pop();
+    errors.push({ line: b.line, col: b.col, severity: "error",
+      message: (b.type === "init" ? "配列初期化子 '{' が閉じられていません。" : "ブロック '{' が閉じられていません。") +
+               "（ファイル末尾までに対応する '}' がありません）" });
+  }
+
+  if (delayLines.length > 0 && !hasXtalFreq){
+    warnings.push({ line: delayLines[0], col: 1, severity: "warning",
+      message: "__delay_ms/__delay_us を使用していますが _XTAL_FREQ が定義されていません（実機では遅延時間が不定になります）。" });
+  }
+
+  var hasErrorOnLine = function(list, line){
+    for (var i = 0; i < list.length; i++){ if (list[i].line === line) return true; }
+    return false;
+  };
+
+  /* 追加監査: 文字列・文字リテラルと括弧/角括弧の対応を行番号つきで確認 */
+  var delimStack = [];
+  var quote = "";
+  var escaped = false;
+  for (var li = 0; li < cleanLines.length; li++){
+    var ln = cleanLines[li];
+    for (var ci2 = 0; ci2 < ln.length; ci2++){
+      var ch2 = ln.charAt(ci2);
+      if (quote){
+        if (escaped){ escaped = false; continue; }
+        if (ch2 === "\\"){ escaped = true; continue; }
+        if (ch2 === quote) quote = "";
+        continue;
+      }
+      if (ch2 === "\"" || ch2 === "'"){ quote = ch2; continue; }
+      if (ch2 === "(" || ch2 === "[") delimStack.push({ ch: ch2, line: li + 1, col: ci2 + 1 });
+      else if (ch2 === ")" || ch2 === "]"){
+        var expected = ch2 === ")" ? "(" : "[";
+        if (!delimStack.length || delimStack[delimStack.length - 1].ch !== expected){
+          if (!hasErrorOnLine(errors, li + 1)) errors.push({ line: li + 1, col: ci2 + 1, severity: "error",
+            message: "対応しない閉じ記号 '" + ch2 + "' です。括弧の種類または順序を確認してください。" });
+        } else delimStack.pop();
+      }
+    }
+  }
+  while (delimStack.length){
+    var d = delimStack.pop();
+    if (!hasErrorOnLine(errors, d.line)) errors.push({ line: d.line, col: d.col, severity: "error",
+      message: "開き記号 '" + d.ch + "' に対応する閉じ記号がありません。" });
+  }
+
+  errors.sort(function(a, b){ return a.line - b.line || a.col - b.col; });
+  warnings.sort(function(a, b){ return a.line - b.line || a.col - b.col; });
+  return { errors: errors, warnings: warnings };
+}
+
+/* 配列初期化子の要素数を数え、サイズ指定に足りない分を 0 で埋める */
+function countElems(text){
+  var t = String(text).trim();
+  if (t === "") return 0;
+  var parts = t.split(",");
+  var n = 0;
+  for (var i = 0; i < parts.length; i++){ if (parts[i].trim() !== "") n++; }
+  return n;
+}
+function padTail(count, size){
+  var out = "";
+  for (var i = count; i < size; i++) out += ", 0";
+  return out;
+}
+
+/* ============ C言語 → JavaScript 変換 (行番号を保持) ============ */
+function transpileCtoJS(src){
+  var clean1 = stripAllComments(src);
+  var defines = {};
+  var staticInit = {};
+  var staticNames = [];
+  var userFns = [];
+
+  var staticRe = new RegExp("^static\\s+" + C_TYPE_RE + "\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*=\\s*([^;\\n]+);\\s*$");
+
+  clean1.forEach(function(l){
+    var t = l.trim();
+    if (t.charAt(0) === "#"){
+      var mm = /^#\s*define\s+([A-Za-z0-9_]+)\s+(.*)$/.exec(t);
+      if (mm) defines[mm[1]] = mm[2].trim();
+      return;
+    }
+    var sm = staticRe.exec(t);
+    if (sm && !(sm[1] in staticInit)){ staticInit[sm[1]] = sm[2].trim(); staticNames.push(sm[1]); }
+
+    var fnRe = new RegExp("\\b" + FN_RET_RE + "\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*\\(", "g");
+    var fm;
+    while ((fm = fnRe.exec(t)) !== null){
+      if (fm[1] !== "main" && userFns.indexOf(fm[1]) === -1) userFns.push(fm[1]);
+      if (fm.index === fnRe.lastIndex) fnRe.lastIndex++; // 無限ループ防止
+    }
+  });
+
+  var inInit = false;
+  var initSize = 0;
+  var initAccum = "";
+  var out = clean1.map(function(line){
+    var t = line.trim();
+    if (t.charAt(0) === "#") return "";
+    if (staticRe.test(t)) return "";                 /* static 宣言は末尾へ集約 */
+
+    var l = line;
+
+    /* マクロ展開 */
+    for (var k in defines){
+      if (!defines.hasOwnProperty(k)) continue;
+      l = l.replace(new RegExp("\\b" + escapeRegExp(k) + "\\b", "g"), function(){ return defines[k]; });
+    }
+
+    /* static 変数は __st.名前 で永続化 */
+    staticNames.forEach(function(nm){
+      l = l.replace(new RegExp("\\b" + escapeRegExp(nm) + "\\b", "g"), "__st." + nm);
+    });
+
+    /* 配列初期化子 { } → [ ]  (サイズ指定がある場合は要素数を合わせる) */
+    if (!inInit){
+      var open = /=\s*\{/.exec(l);
+      if (open){
+        var head = l.slice(0, open.index);
+        var sizeM = /\[\s*(\d+)\s*\]/.exec(head);
+        initSize = sizeM ? parseInt(sizeM[1], 10) : 0;
+        var tailText = l.slice(open.index);
+        if (/\}\s*;/.test(tailText)){
+          var inner = tailText.replace(/=\s*\{/, "").replace(/\}\s*;/, "");
+          l = head + "= [" + inner.trim() + padTail(countElems(inner), initSize) + "];";
+          initSize = 0;
+        } else {
+          inInit = true;
+          initAccum = "";
+          l = head + "= [";
+        }
+      }
+    } else if (/\}\s*;/.test(l)){
+      inInit = false;
+      var before = l.replace(/\}\s*;/, "");
+      initAccum += "\n" + before;
+      l = before + padTail(countElems(initAccum), initSize) + "];";
+      initSize = 0;
+      initAccum = "";
+    }
+
+    /* ユーザー関数定義 → async function (名前は後で復元) */
+    userFns.forEach(function(fn){
+      var re = new RegExp("\\b" + FN_RET_RE + "\\s+" + escapeRegExp(fn) + "\\s*\\(([^)]*)\\)\\s*\\{", "g");
+      l = l.replace(re, function(mt, params){
+        var pc = params.split(",").map(function(p){
+          return p.trim()
+            .replace(new RegExp("^(?:const\\s+)?(?:unsigned\\s+)?(?:uint8_t|int8_t|uint16_t|int16_t|uint32_t|int32_t|unsigned\\s+char|unsigned\\s+int|char|int|long)\\s*\\*?\\s*"), "")
+            .replace(/\[[^\]]*\]/g, "")
+            .trim();
+        }).filter(function(p){ return p !== "" && p !== "void"; }).join(", ");
+        return "async function __UFN_" + fn + "__(" + pc + ") {";
+      });
+    });
+
+    /* main → async function main */
+    l = l.replace(/\b(?:void|int)\s+main\s*\([^)]*\)\s*\{/g, "async function main() {");
+
+    /* 型宣言 → let */
+    l = l.replace(new RegExp("\\b" + C_TYPE_RE + "\\s*\\*?\\s*([A-Za-z_][A-Za-z0-9_]*)\\s*(\\[[^\\]]*\\])?\\s*(?=[=,;])", "g"), "let $1 ");
+
+    /* ユーザー関数呼び出しに await を付与 */
+    userFns.forEach(function(fn){
+      l = l.replace(new RegExp("\\b" + escapeRegExp(fn) + "\\s*\\(", "g"), "await " + fn + "(");
+    });
+    userFns.forEach(function(fn){
+      l = l.replace(new RegExp("__UFN_" + escapeRegExp(fn) + "__", "g"), fn);
+    });
+
+    /* レジスタ代入 */
+    l = l.replace(/\bTRISA\s*=(?!=)\s*([^;\n]+);/g, 'mcu.setTRIS("A", $1);');
+    l = l.replace(/\bTRISB\s*=(?!=)\s*([^;\n]+);/g, 'mcu.setTRIS("B", $1);');
+    l = l.replace(/\bTRISC\s*=(?!=)\s*([^;\n]+);/g, 'mcu.setTRIS("C", $1);');
+    l = l.replace(/\bANSELA\s*=(?!=)\s*([^;\n]+);/g, 'mcu.setANSEL("A", $1);');
+    l = l.replace(/\bANSELB\s*=(?!=)\s*([^;\n]+);/g, 'mcu.setANSEL("B", $1);');
+    l = l.replace(/\bANSELC\s*=(?!=)\s*([^;\n]+);/g, 'mcu.setANSEL("C", $1);');
+    l = l.replace(/\bLATA\s*=(?!=)\s*([^;\n]+);/g, 'mcu.setLAT("A", $1);');
+    l = l.replace(/\bLATB\s*=(?!=)\s*([^;\n]+);/g, 'mcu.setLAT("B", $1);');
+    l = l.replace(/\bLATC\s*=(?!=)\s*([^;\n]+);/g, 'mcu.setLAT("C", $1);');
+    l = l.replace(/\bPORTA\s*=(?!=)\s*([^;\n]+);/g, 'mcu.setLAT("A", $1);');
+    l = l.replace(/\bPORTB\s*=(?!=)\s*([^;\n]+);/g, 'mcu.setLAT("B", $1);');
+    l = l.replace(/\bPORTC\s*=(?!=)\s*([^;\n]+);/g, 'mcu.setLAT("C", $1);');
+
+    /* ビット代入 */
+    for (var i = 0; i < 8; i++){
+      l = l.replace(new RegExp("\\bPORTAbits\\.RA" + i + "\\s*=(?!=)\\s*([^;\\n]+);", "g"), "mcu.setBit('PORTA', " + i + ", $1);");
+      l = l.replace(new RegExp("\\bLATAbits\\.LATA" + i + "\\s*=(?!=)\\s*([^;\\n]+);", "g"), "mcu.setBit('LATA', " + i + ", $1);");
+      l = l.replace(new RegExp("\\bLATBbits\\.LATB" + i + "\\s*=(?!=)\\s*([^;\\n]+);", "g"), "mcu.setBit('LATB', " + i + ", $1);");
+      l = l.replace(new RegExp("\\bLATCbits\\.LATC" + i + "\\s*=(?!=)\\s*([^;\\n]+);", "g"), "mcu.setBit('LATC', " + i + ", $1);");
+    }
+    /* ビット参照 */
+    for (var j = 0; j < 8; j++){
+      l = l.replace(new RegExp("\\bPORTAbits\\.RA" + j + "\\b", "g"), "mcu.getBit('PORTA', " + j + ")");
+      l = l.replace(new RegExp("\\bLATAbits\\.LATA" + j + "\\b", "g"), "mcu.getBit('LATA', " + j + ")");
+      l = l.replace(new RegExp("\\bLATBbits\\.LATB" + j + "\\b", "g"), "mcu.getBit('LATB', " + j + ")");
+      l = l.replace(new RegExp("\\bLATCbits\\.LATC" + j + "\\b", "g"), "mcu.getBit('LATC', " + j + ")");
+    }
+    /* ポート全体参照 */
+    l = l.replace(/(?<!["'])\bPORTA\b(?!["'])/g, 'mcu.getPORT("A")');
+    l = l.replace(/(?<!["'])\bPORTB\b(?!["'])/g, 'mcu.getPORT("B")');
+    l = l.replace(/(?<!["'])\bPORTC\b(?!["'])/g, 'mcu.getPORT("C")');
+
+    /* ディレイ */
+    l = l.replace(/\b(?:__delay_ms|delay_ms)\s*\(([^)\n]+)\);/g, "await mcu.delay_ms($1);");
+    l = l.replace(/\b(?:__delay_us|delay_us)\s*\(([^)\n]+)\);/g, "await mcu.delay_us($1);");
+
+    return l;
+  });
+
+  var body = out.join("\n");
+  if (staticNames.length > 0){
+    var props = staticNames.map(function(n){ return n + ": " + staticInit[n]; }).join(", ");
+    body += "\nconst __st = { " + props + " };";
+  }
+  return body;
+}
+
+/* JavaScript の構文エラーから行番号を拾う (V8/SpiderMonkey 両対応) */
+function extractJsErrorPos(err){
+  var s = (err && (err.stack || "")) || "";
+  var m = /<anonymous>:(\d+):(\d+)/.exec(s);
+  if (m) return { line: parseInt(m[1], 10), col: parseInt(m[2], 10) };
+  m = /eval:(\d+):(\d+)/.exec(s);
+  if (m) return { line: parseInt(m[1], 10), col: parseInt(m[2], 10) };
+  return null;
+}
+
+
+// ===================== UI / STATE =====================
+const codeEditor = document.getElementById("code-editor");
+const gutter = document.getElementById("gutter");
+const gutterInner = document.getElementById("gutter-inner");
+const highlightLayer = document.getElementById("hl-layer");
+const problemsPane = document.getElementById("pane-problems");
+const consolePane = document.getElementById("pane-console");
+const consoleLines = [];
+let diagnostics = { errors: [], warnings: [] };
+let currentFileHandle = null;
+let fileName = "main.c";
+let lastSavedText = "";
+let toastTimer = null;
+let nextErrorIndex = 0;
+let mcu = null;
+const ledGlow = Array.from({ length: 8 }, function () { return Array(8).fill(0); });
+
+function escapeHTML(s) {
+  return String(s).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
+function showToast(message, duration) {
+  const t = document.getElementById("toast");
+  t.textContent = message;
+  t.style.display = "block";
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { t.style.display = "none"; }, duration || 2600);
+}
+function updateDirty() {
+  const dirty = codeEditor.value !== lastSavedText;
+  document.getElementById("tab-dirty").style.display = dirty ? "inline" : "none";
+  document.getElementById("status-file").textContent = fileName + (dirty ? " ・ 未保存" : " ・ 保存済み");
+}
+function updateTabName() {
+  document.getElementById("tab-name").textContent = fileName;
+  document.title = fileName + " — PIC16F18857 開発スタジオ";
+  updateDirty();
+}
+function updateStatusCursor() {
+  const at = codeEditor.selectionStart;
+  const rows = codeEditor.value.slice(0, at).split("\n");
+  document.getElementById("status-cursor").textContent = "Ln " + rows.length + ", Col " + (rows[rows.length - 1].length + 1);
+  document.getElementById("status-sel").textContent = "選択 " + Math.abs(codeEditor.selectionEnd - codeEditor.selectionStart) + " 文字";
+}
+function setEditorText(text, name, handle) {
+  codeEditor.value = String(text).replace(/\r\n?/g, "\n");
+  fileName = name || "main.c";
+  currentFileHandle = (handle === undefined) ? null : handle;
+  lastSavedText = codeEditor.value;
+  updateTabName();
+  updateStatusCursor();
+  runLiveSyntaxCheck();
+  try {
+    localStorage.setItem("pic16f18857_autosave", codeEditor.value);
+    localStorage.setItem("pic16f18857_filename", fileName);
+  } catch (e) { /* 保存不可の環境では無視 */ }
+}
+
+// ===================== DIAGNOSTICS =====================
+function allDiagnostics() {
+  return diagnostics.errors.concat(diagnostics.warnings).sort(function (a, b) { return a.line - b.line || a.col - b.col; });
+}
+function runLiveSyntaxCheck() {
+  diagnostics = analyzeCSyntax(codeEditor.value);
+  renderProblems();
+  renderGutter();
+  const ec = diagnostics.errors.length;
+  const wc = diagnostics.warnings.length;
+  const chip = document.getElementById("chip-syntax");
+  const errChip = document.getElementById("chip-errors");
+  if (ec) { chip.textContent = "構文エラーあり"; chip.className = "chip chip-err"; }
+  else if (wc) { chip.textContent = "警告あり"; chip.className = "chip chip-warn"; }
+  else { chip.textContent = "構文チェック完了"; chip.className = "chip chip-ok"; }
+  if (ec) { errChip.style.display = "inline-block"; errChip.textContent = "エラー " + ec; }
+  else { errChip.style.display = "none"; }
+  document.getElementById("problems-count").textContent = "(" + (ec + wc) + ")";
+}
+function renderProblems() {
+  const items = allDiagnostics();
+  if (!items.length) {
+    problemsPane.innerHTML = '<div style="padding:10px 8px;color:#34d399;font-size:11px">構文エラーはありません。ビルドできます。</div>';
+    return;
+  }
+  const html = items.map(function (d, i) {
+    const warn = d.severity === "warning";
+    const cls = warn ? "diag diag-w" : "diag diag-e";
+    const label = warn ? "警告" : "エラー";
+    const color = warn ? "#f7d886" : "#ffc1c1";
+    return '<div class="' + cls + '" data-diag-index="' + i + '" tabindex="0" role="button" aria-label="行 ' + d.line + ' 列 ' + (d.col || 1) + ' ' + escapeHTML(d.message) + '">'
+      + '<span class="diag-loc">' + label + ' L' + d.line + ':C' + (d.col || 1) + '</span>'
+      + '<span style="font-size:10.5px;line-height:1.5;color:' + color + '">' + escapeHTML(d.message) + '</span>'
+      + '</div>';
+  }).join("");
+  problemsPane.innerHTML = html;
+  const nodes = problemsPane.querySelectorAll(".diag");
+  for (let k = 0; k < nodes.length; k++) {
+    (function (el) {
+      const go = function () { jumpToSource(items[Number(el.getAttribute("data-diag-index"))]); };
+      el.addEventListener("click", go);
+      el.addEventListener("keydown", function (ev) {
+        if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); go(); }
+      });
+    })(nodes[k]);
+  }
+}
+function renderGutter() {
+  const lineCount = Math.max(1, codeEditor.value.split("\n").length);
+  const mark = {};
+  diagnostics.errors.forEach(function (x) { if (!mark[x.line]) mark[x.line] = "err"; });
+  diagnostics.warnings.forEach(function (x) { if (!mark[x.line]) mark[x.line] = "warn"; });
+  let html = "";
+  for (let i = 1; i <= lineCount; i++) {
+    const kind = mark[i] || "";
+    const tip = kind === "err" ? "エラーあり" : kind === "warn" ? "警告あり" : "行 " + i;
+    html += '<div class="gline ' + kind + '" data-line="' + i + '" title="' + tip + '">' + i + '</div>';
+  }
+  gutterInner.innerHTML = html;
+  const nodes = gutterInner.querySelectorAll(".gline");
+  for (let k = 0; k < nodes.length; k++) {
+    (function (el) {
+      el.addEventListener("click", function () { jumpToLine(Number(el.getAttribute("data-line")), 1); });
+    })(nodes[k]);
+  }
+  syncEditorDecorations();
+}
+function syncEditorDecorations() {
+  const lineH = 22;
+  const pad = 12;
+  gutter.scrollTop = codeEditor.scrollTop;
+  gutterInner.style.transform = "translateY(" + (-codeEditor.scrollTop) + "px)";
+  const positions = [];
+  diagnostics.errors.forEach(function (d) { positions.push({ d: d, kind: "err" }); });
+  diagnostics.warnings.forEach(function (d) { positions.push({ d: d, kind: "warn" }); });
+  highlightLayer.innerHTML = positions.map(function (x) {
+    const top = pad + (x.d.line - 1) * lineH - codeEditor.scrollTop;
+    return '<div class="hl-row ' + (x.kind === "warn" ? "warn" : "") + '" style="top:' + top + 'px" title="' + escapeHTML(x.d.message) + '"></div>';
+  }).join("");
+}
+function jumpToSource(d) {
+  if (!d) return;
+  switchPane("problems");
+  jumpToLine(d.line, d.col || 1);
+}
+function jumpToLine(line, col) {
+  const lines = codeEditor.value.split("\n");
+  line = Math.max(1, Math.min(line, lines.length));
+  let offset = 0;
+  for (let i = 0; i < line - 1; i++) offset += lines[i].length + 1;
+  const lineText = lines[line - 1] || "";
+  const c = Math.max(1, Math.min(col || 1, lineText.length + 1));
+  codeEditor.focus();
+  codeEditor.setSelectionRange(offset + c - 1, offset + lineText.length);
+  codeEditor.scrollTop = Math.max(0, (line - 3) * 22);
+  syncEditorDecorations();
+  updateStatusCursor();
+}
+function nextDiagnostic() {
+  const errs = diagnostics.errors;
+  if (!errs.length) { showToast("移動できるエラーはありません。"); return; }
+  const current = codeEditor.value.slice(0, codeEditor.selectionStart).split("\n").length;
+  let found = -1;
+  for (let i = 0; i < errs.length; i++) { if (errs[i].line > current) { found = i; break; } }
+  nextErrorIndex = found < 0 ? 0 : found;
+  jumpToSource(errs[nextErrorIndex]);
+}
+
+// ===================== BUILD CONSOLE =====================
+function addLog(message, kind) {
+  const time = new Date().toLocaleTimeString("ja-JP", { hour12: false });
+  consoleLines.push({ time: time, message: String(message), kind: kind || "info" });
+  if (consoleLines.length > 500) consoleLines.shift();
+  renderConsole();
+}
+function renderConsole() {
+  consolePane.innerHTML = consoleLines.map(function (x) {
+    const cls = x.kind === "error" ? "log-err"
+      : x.kind === "success" ? "log-ok"
+      : x.kind === "warn" ? "log-warn"
+      : x.kind === "system" ? "log-sys"
+      : x.kind === "source" ? "log-src"
+      : x.kind === "caret" ? "log-caret"
+      : "log-dim";
+    return '<div class="log ' + cls + '"><span style="color:#475569">[' + x.time + ']</span> ' + escapeHTML(x.message) + '</div>';
+  }).join("");
+  consolePane.scrollTop = consolePane.scrollHeight;
+}
+function logSourceError(d) {
+  const lines = codeEditor.value.split("\n");
+  const src = lines[d.line - 1] || "";
+  addLog("ソース位置: " + fileName + ":" + d.line + ":" + (d.col || 1), "error");
+  addLog("  " + src, "source");
+  addLog("  " + " ".repeat(Math.max(0, (d.col || 1) - 1)) + "^ ここ", "caret");
+  addLog("原因: " + d.message, "error");
+}
+function switchPane(name) {
+  const isProblems = name === "problems";
+  document.getElementById("pane-problems").style.display = isProblems ? "flex" : "none";
+  document.getElementById("pane-console").style.display = isProblems ? "none" : "block";
+  document.getElementById("tab-problems").classList.toggle("active", isProblems);
+  document.getElementById("tab-console").classList.toggle("active", !isProblems);
+}
+document.getElementById("tab-problems").addEventListener("click", function () { switchPane("problems"); });
+document.getElementById("tab-console").addEventListener("click", function () { switchPane("console"); });
+
+// ===================== VIRTUAL MCU =====================
+function VirtualMCU() {
+  this.TRISA = 0xFF; this.TRISB = 0x00; this.TRISC = 0x00;
+  this.PORTA = 0x00; this.PORTB = 0x00; this.PORTC = 0x00;
+  this.LATA = 0x00; this.LATB = 0xFF; this.LATC = 0x00;
+  this.cycles = 0; this.running = false; this.paused = false;
+  this.speedFactor = 1; this.runToken = 0;
+}
+VirtualMCU.prototype.reset = function () {
+  this.running = false; this.paused = false; this.runToken++;
+  this.TRISA = 0xFF; this.TRISB = 0x00; this.TRISC = 0x00;
+  this.LATA = 0x00; this.LATB = 0xFF; this.LATC = 0x00; this.cycles = 0;
+  for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) ledGlow[r][c] = 0;
+  updateRegisterUI();
+  updateRunButton();
+};
+VirtualMCU.prototype.setTRIS = function (p, v) {
+  v = Number(v) & 0xFF;
+  if (p === "A") this.TRISA = v;
+  if (p === "B") this.TRISB = v;
+  if (p === "C") this.TRISC = v;
+  updateRegisterUI();
+};
+VirtualMCU.prototype.setANSEL = function () { /* アナログ機能は本シミュレータでは常にデジタル */ };
+VirtualMCU.prototype.setLAT = function (p, v) {
+  v = Number(v) & 0xFF;
+  if (p === "A") this.LATA = v;
+  if (p === "B") this.LATB = v;
+  if (p === "C") this.LATC = v;
+  this.updateHardware();
+  updateRegisterUI();
+};
+VirtualMCU.prototype.setBit = function (r, b, v) {
+  b = Number(b); v = Number(v) ? 1 : 0;
+  let n = 0;
+  if (r === "PORTA") n = this.PORTA; else if (r === "LATA") n = this.LATA;
+  else if (r === "LATB") n = this.LATB; else if (r === "LATC") n = this.LATC;
+  if (v) n |= (1 << b); else n &= ~(1 << b);
+  if (r === "PORTA") this.PORTA = n; else if (r === "LATA") this.LATA = n;
+  else if (r === "LATB") this.LATB = n; else if (r === "LATC") this.LATC = n;
+  this.updateHardware();
+  updateRegisterUI();
+};
+VirtualMCU.prototype.getPORT = function (p) {
+  if (p === "A") return this.PORTA & 0xFF;
+  if (p === "B") return ((this.LATB & ~this.TRISB) | (this.PORTB & this.TRISB)) & 0xFF;
+  if (p === "C") return ((this.LATC & ~this.TRISC) | (this.PORTC & this.TRISC)) & 0xFF;
+  return 0;
+};
+VirtualMCU.prototype.getBit = function (r, b) {
+  let v = 0;
+  if (r === "PORTA") v = this.PORTA; else if (r === "LATA") v = this.LATA;
+  else if (r === "LATB") v = this.LATB; else if (r === "LATC") v = this.LATC;
+  return (v >> Number(b)) & 1;
+};
+VirtualMCU.prototype.delay_ms = function (ms) {
+  const self = this;
+  const token = this.runToken;
+  this.cycles += Math.floor(Number(ms) * 3200);
+  document.getElementById("cycle-counter").textContent = "Cycles " + this.cycles.toLocaleString();
+  if (!this.running) return Promise.reject(new Error("MCU_STOPPED"));
+  const wait = function () {
+    if (!self.running || token !== self.runToken) return Promise.reject(new Error("MCU_STOPPED"));
+    if (self.paused) return new Promise(function (res) { setTimeout(res, 40); }).then(wait);
+    return new Promise(function (res) { setTimeout(res, Math.max(0.25, Number(ms) / self.speedFactor)); });
+  };
+  return wait();
+};
+VirtualMCU.prototype.delay_us = function (us) {
+  this.cycles += Math.floor(Number(us) * 3.2);
+  if (!this.running) return Promise.reject(new Error("MCU_STOPPED"));
+  return Promise.resolve();
+};
+VirtualMCU.prototype.updateHardware = function () {
+  for (let r = 0; r < 8; r++) {
+    const rowOn = (this.LATC & (1 << r)) !== 0;
+    for (let c = 0; c < 8; c++) {
+      const cathodeOn = (this.LATB & (1 << c)) === 0;
+      if (rowOn && cathodeOn) ledGlow[r][c] = 1;
+    }
+  }
+};
+mcu = new VirtualMCU();
+
+// ===================== REGISTER / PIN / MATRIX VIEW =====================
+function makePinRows() {
+  const left = [{ p: 1, n: "MCLR", t: "pwr" }, { p: 2, n: "RA0", t: "a" }, { p: 3, n: "RA1", t: "a" }, { p: 4, n: "RA2", t: "a" }, { p: 5, n: "RA3", t: "a" }, { p: 6, n: "RA4", t: "a" }, { p: 7, n: "RA5", t: "a" }, { p: 8, n: "VSS", t: "pwr" }, { p: 9, n: "RA6", t: "a" }, { p: 10, n: "RA7", t: "a" }, { p: 11, n: "RC0", t: "c" }, { p: 12, n: "RC1", t: "c" }, { p: 13, n: "RC2", t: "c" }, { p: 14, n: "RC3", t: "c" }];
+  const right = [{ p: 28, n: "RB7", t: "b" }, { p: 27, n: "RB6", t: "b" }, { p: 26, n: "RB5", t: "b" }, { p: 25, n: "RB4", t: "b" }, { p: 24, n: "RB3", t: "b" }, { p: 23, n: "RB2", t: "b" }, { p: 22, n: "RB1", t: "b" }, { p: 21, n: "RB0", t: "b" }, { p: 20, n: "VDD", t: "pwr" }, { p: 19, n: "VSS", t: "pwr" }, { p: 18, n: "RC7", t: "c" }, { p: 17, n: "RC6", t: "c" }, { p: 16, n: "RC5", t: "c" }, { p: 15, n: "RC4", t: "c" }];
+  const color = { a: "#fbbf24", b: "#22d3ee", c: "#34d399", pwr: "#556274" };
+  const render = function (arr, id, side) {
+    document.getElementById(id).innerHTML = arr.map(function (x) {
+      const num = '<span style="width:17px;color:#3d4a5f">' + x.p + '</span>';
+      const nm = '<span>' + x.n + '</span>';
+      return '<div class="pin" id="pin-' + x.n + '" style="color:' + color[x.t] + '">' + (side === "left" ? num + nm : nm + num) + '</div>';
+    }).join("");
+  };
+  render(left, "chip-pins-left", "left");
+  render(right, "chip-pins-right", "right");
+}
+function buildHardwareStatic() {
+  let colsHTML = "";
+  let rowsHTML = "";
+  for (let i = 0; i < 8; i++) {
+    colsHTML += "<span>RB" + i + "</span>";
+    rowsHTML += "<span>RC" + i + "</span>";
+  }
+  document.getElementById("label-cols").innerHTML = colsHTML;
+  document.getElementById("label-rows").innerHTML = rowsHTML;
+  let barsHTML = "";
+  for (let i = 0; i < 8; i++) {
+    barsHTML += '<div style="display:flex;align-items:center;gap:7px">'
+      + '<span class="mono" style="font-size:9px;color:#34d399;width:22px">RC' + i + '</span>'
+      + '<div class="bar"><i id="res-bar-' + i + '" style="transform:scaleX(0)"></i></div>'
+      + '<span class="mono" style="font-size:8px;color:#556274;width:34px;text-align:right">1k&#x2126;</span>'
+      + '</div>';
+  }
+  document.getElementById("resistor-bars").innerHTML = barsHTML;
+
+  const grid = document.getElementById("switches-grid");
+  grid.innerHTML = "";
+  for (let i = 0; i < 8; i++) {
+    (function (idx) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "sw";
+      b.id = "sw-" + idx;
+      b.setAttribute("aria-label", "RA" + idx + " タクトスイッチ");
+      b.innerHTML = '<span class="pill"></span><span class="cap">RA' + idx + '</span><span class="key">KEY ' + (idx + 1) + '</span>';
+      const press = function (ev) {
+        if (ev) ev.preventDefault();
+        mcu.PORTA |= (1 << idx);
+        b.classList.add("pressed");
+        updateRegisterUI();
+      };
+      const release = function (ev) {
+        if (ev) ev.preventDefault();
+        mcu.PORTA &= ~(1 << idx);
+        b.classList.remove("pressed");
+        updateRegisterUI();
+      };
+      b.addEventListener("pointerdown", press);
+      b.addEventListener("pointerup", release);
+      b.addEventListener("pointerleave", release);
+      b.addEventListener("pointercancel", release);
+      grid.appendChild(b);
+    })(i);
+  }
+  makePinRows();
+}
+function toHex(v) { return "0x" + (v & 0xFF).toString(16).toUpperCase().padStart(2, "0"); }
+function toBin(v) { return (v & 0xFF).toString(2).padStart(8, "0"); }
+function updateRegisterUI() {
+  if (!mcu) return;
+  const map = {
+    "reg-porta-hex": toHex(mcu.PORTA), "reg-porta-bin": toBin(mcu.PORTA), "reg-trisa-hex": toHex(mcu.TRISA),
+    "reg-latb-hex": toHex(mcu.LATB), "reg-latb-bin": toBin(mcu.LATB), "reg-trisb-hex": toHex(mcu.TRISB),
+    "reg-latc-hex": toHex(mcu.LATC), "reg-latc-bin": toBin(mcu.LATC), "reg-trisc-hex": toHex(mcu.TRISC)
+  };
+  Object.keys(map).forEach(function (id) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = map[id];
+  });
+  for (let i = 0; i < 8; i++) {
+    const bar = document.getElementById("res-bar-" + i);
+    if (bar) bar.style.transform = (mcu.LATC & (1 << i)) ? "scaleX(1)" : "scaleX(0)";
+    const sw = document.getElementById("sw-" + i);
+    if (sw) sw.classList.toggle("pressed", !!(mcu.PORTA & (1 << i)));
+    const pa = document.getElementById("pin-RA" + i);
+    if (pa) pa.classList.toggle("on", !!(mcu.PORTA & (1 << i)));
+    const pb = document.getElementById("pin-RB" + i);
+    if (pb) pb.classList.toggle("on", !(mcu.LATB & (1 << i)));
+    const pc = document.getElementById("pin-RC" + i);
+    if (pc) pc.classList.toggle("on", !!(mcu.LATC & (1 << i)));
+  }
+}
+const canvas = document.getElementById("matrix-canvas");
+const ctx = canvas.getContext("2d");
+function drawMatrix() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const pad = 14, cell = (canvas.width - 2 * pad) / 8, rad = cell * 0.34;
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const x = pad + c * cell + cell / 2;
+      const y = pad + r * cell + cell / 2;
+      ledGlow[r][c] *= 0.91;
+      if (ledGlow[r][c] < 0.008) ledGlow[r][c] = 0;
+      const g = ledGlow[r][c];
+      ctx.beginPath(); ctx.arc(x, y, rad, 0, Math.PI * 2);
+      ctx.fillStyle = "#14090b"; ctx.fill();
+      ctx.strokeStyle = "#2a161a"; ctx.lineWidth = 1; ctx.stroke();
+      if (g > 0) {
+        const gr = ctx.createRadialGradient(x, y, 1, x, y, rad * 1.8);
+        gr.addColorStop(0, "rgba(255,245,240," + g + ")");
+        gr.addColorStop(0.3, "rgba(255,72,51," + g + ")");
+        gr.addColorStop(0.75, "rgba(210,30,18," + (g * 0.78) + ")");
+        gr.addColorStop(1, "rgba(180,10,10,0)");
+        ctx.beginPath(); ctx.arc(x, y, rad * 1.7, 0, Math.PI * 2);
+        ctx.fillStyle = gr; ctx.fill();
+        ctx.beginPath(); ctx.arc(x, y, rad * 0.48, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255,245,240," + (g * 0.85) + ")"; ctx.fill();
+      }
+    }
+  }
+  requestAnimationFrame(drawMatrix);
+}
+
+// ===================== FILE HANDLING =====================
+const BLANK = [
+  "#include <xc.h>",
+  "#define _XTAL_FREQ 32000000",
+  "",
+  "void main(void) {",
+  "    TRISA = 0xFF;",
+  "    TRISB = 0x00;",
+  "    TRISC = 0x00;",
+  "",
+  "    while(1) {",
+  "        LATB = 0xFF;",
+  "        LATC = 0x00;",
+  "    }",
+  "}",
+  ""
+].join("\n");
+function maybeDiscard() {
+  return codeEditor.value === lastSavedText || confirm("未保存の変更があります。破棄しますか？");
+}
+function updateFileStatus() { updateTabName(); }
+function applyLoadedText(text, name, handle) {
+  setEditorText(text, name, handle);
+  switchPane("problems");
+}
+function openWithPicker() {
+  if (!maybeDiscard()) return;
+  if (window.showOpenFilePicker) {
+    window.showOpenFilePicker({
+      multiple: false,
+      types: [{ description: "C ソース", accept: { "text/plain": [".c", ".h", ".txt"] } }]
+    }).then(function (handles) {
+      return handles[0].getFile().then(function (f) {
+        return f.text().then(function (txt) {
+          applyLoadedText(txt, f.name, handles[0]);
+          showToast(f.name + " を読み込みました");
+        });
+      });
+    }).catch(function (err) {
+      if (err && err.name === "AbortError") return;
+      document.getElementById("hidden-file").click();
+    });
+    return;
+  }
+  document.getElementById("hidden-file").click();
+}
+function writeToHandle(handle) {
+  return handle.createWritable().then(function (w) {
+    return w.write(codeEditor.value).then(function () { return w.close(); });
+  });
+}
+function downloadSource(name) {
+  const blob = new Blob([codeEditor.value], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+}
+function saveFile(saveAs) {
+  let suggested = fileName || "main.c";
+  if (!/\.[A-Za-z0-9]+$/.test(suggested)) suggested += ".c";
+  const finish = function (name, handle) {
+    fileName = name;
+    currentFileHandle = handle || null;
+    lastSavedText = codeEditor.value;
+    updateFileStatus();
+    showToast(name + " を保存しました");
+  };
+  if (!saveAs && currentFileHandle) {
+    writeToHandle(currentFileHandle).then(function () { finish(fileName, currentFileHandle); })
+      .catch(function (err) { addLog("同一ファイルへの保存に失敗しました: " + err.message, "warn"); });
+    return;
+  }
+  if (window.showSaveFilePicker) {
+    window.showSaveFilePicker({
+      suggestedName: suggested,
+      types: [{ description: "C source", accept: { "text/plain": [".c", ".h", ".txt"] } }]
+    }).then(function (h) {
+      return writeToHandle(h).then(function () { finish(h.name || suggested, h); });
+    }).catch(function (err) {
+      if (err && err.name === "AbortError") return;
+      fallbackDownload(suggested, saveAs);
+    });
+    return;
+  }
+  fallbackDownload(suggested, saveAs);
+}
+function fallbackDownload(suggested, askName) {
+  let name = suggested;
+  if (askName) { const typed = prompt("保存するファイル名を入力してください", suggested); if (!typed) return; name = typed; }
+  if (!/\.[A-Za-z0-9]+$/.test(name)) name += ".c";
+  downloadSource(name);
+  fileName = name;
+  currentFileHandle = null;
+  lastSavedText = codeEditor.value;
+  updateFileStatus();
+  showToast(name + " をダウンロードしました");
+}
+function exportC() {
+  let name = fileName || "main.c";
+  name = name.replace(/\.[^.]+$/, "") + ".c";
+  downloadSource(name);
+  showToast(name + " を書き出しました");
+}
+document.getElementById("file-open").addEventListener("click", openWithPicker);
+document.getElementById("file-import").addEventListener("click", openWithPicker);
+document.getElementById("file-save").addEventListener("click", function () { saveFile(false); });
+document.getElementById("file-save-as").addEventListener("click", function () { saveFile(true); });
+document.getElementById("file-export").addEventListener("click", exportC);
+document.getElementById("file-new").addEventListener("click", function () {
+  if (!maybeDiscard()) return;
+  setEditorText(BLANK, "main.c", null);
+  showToast("新しいソースを開始しました");
+});
+document.getElementById("hidden-file").addEventListener("change", function (e) {
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+  f.text().then(function (txt) {
+    applyLoadedText(txt, f.name, null);
+    showToast(f.name + " を読み込みました");
+  }).catch(function (err) {
+    showToast("読み込みに失敗しました: " + err.message, 4000);
+  });
+  e.target.value = "";
+});
+
+// ===================== BUILD & EXECUTION =====================
+function buildFailure(e) {
+  const pos = extractJsErrorPos(e);
+  addLog("ビルド失敗: " + (e && e.message ? e.message : String(e)), "error");
+  if (pos) {
+    const d = { line: Math.max(1, pos.line - 1), col: pos.col || 1, severity: "error", message: "変換後コードの構文エラー: " + (e.message || e) };
+    addLog("根源候補: " + fileName + ":" + d.line + ":" + d.col, "error");
+    logSourceError(d);
+    jumpToSource(d);
+  } else {
+    const first = diagnostics.errors[0];
+    if (first) { logSourceError(first); jumpToSource(first); }
+    else addLog("変換後コードの構文エラー位置をブラウザが返しませんでした。括弧・セミコロン・配列宣言を確認してください。", "warn");
+  }
+  document.getElementById("status-build").textContent = "ビルド失敗";
+  document.getElementById("status-build").style.color = "#f87171";
+}
+function buildAndFlash() {
+  switchPane("console");
+  addLog("============================================================", "system");
+  addLog("ビルド開始: " + fileName, "system");
+  runLiveSyntaxCheck();
+  if (diagnostics.errors.length) {
+    addLog("ビルド停止: " + diagnostics.errors.length + " 件の構文エラーがあります。各項目にソースの行・列を表示します。", "error");
+    diagnostics.errors.forEach(logSourceError);
+    document.getElementById("status-build").textContent = "構文エラー " + diagnostics.errors.length + " 件";
+    document.getElementById("status-build").style.color = "#f87171";
+    switchPane("problems");
+    return;
+  }
+  diagnostics.warnings.forEach(function (d) {
+    addLog("警告: " + fileName + ":" + d.line + ":" + (d.col || 1) + " " + d.message, "warn");
+  });
+  mcu.runToken++;
+  mcu.running = false; mcu.paused = false;
+  for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) ledGlow[r][c] = 0;
+  mcu.TRISA = 0xFF; mcu.TRISB = 0x00; mcu.TRISC = 0x00;
+  mcu.LATA = 0x00; mcu.LATB = 0xFF; mcu.LATC = 0x00; mcu.cycles = 0;
+  updateRegisterUI();
+
+  let js;
+  try {
+    js = transpileCtoJS(codeEditor.value);
+  } catch (e) {
+    buildFailure(e);
+    switchPane("problems");
+    return;
+  }
+  let runner;
+  try {
+    runner = new Function("mcu", "return (async function () {\n" + js + "\nif (typeof main !== 'function') { throw new Error('main() 関数が見つかりません。'); }\nawait main();\n})();");
+  } catch (e) {
+    buildFailure(e);
+    switchPane("problems");
+    return;
+  }
+  addLog("Cソースの構文解析: OK", "success");
+  addLog("C→JavaScript 変換・構文検査: OK", "success");
+  addLog("ターゲット: PIC16F18857 ・ クロック: 32 MHz", "info");
+  addLog("書き込み完了。シミュレーション実行を開始します。", "success");
+  document.getElementById("status-build").textContent = "実行中";
+  document.getElementById("status-build").style.color = "#22d3ee";
+  document.getElementById("chip-syntax").textContent = "実行中";
+  document.getElementById("chip-syntax").className = "chip chip-run";
+  mcu.running = true; mcu.paused = false;
+  updateRunButton();
+  Promise.resolve(runner(mcu)).catch(function (err) {
+    if (err && err.message === "MCU_STOPPED") return;
+    const pos = extractJsErrorPos(err);
+    addLog("実行時エラー: " + (err && err.message ? err.message : String(err)), "error");
+    if (pos) {
+      const d = { line: Math.max(1, pos.line - 1), col: pos.col || 1, severity: "error", message: "実行時エラー: " + err.message };
+      addLog("発生位置: " + fileName + ":" + d.line + ":" + d.col, "error");
+      logSourceError(d);
+      jumpToSource(d);
+    } else {
+      addLog("実行位置を特定できませんでした。配列の添字・関数呼び出し・変数宣言を確認してください。", "warn");
+    }
+    document.getElementById("status-build").textContent = "実行時エラー";
+    document.getElementById("status-build").style.color = "#f87171";
+  });
+}
+function updateRunButton() {
+  const btn = document.getElementById("btn-run");
+  const icon = document.getElementById("run-icon");
+  const text = document.getElementById("run-text");
+  if (mcu.running && !mcu.paused) { icon.textContent = "\u23F8"; text.textContent = "一時停止"; btn.className = "btn btn-danger"; }
+  else { icon.textContent = "\u25B6"; text.textContent = mcu.paused ? "再開" : "実行"; btn.className = "btn"; }
+}
+document.getElementById("btn-flash").addEventListener("click", buildAndFlash);
+document.getElementById("btn-run").addEventListener("click", function () {
+  if (!mcu.running) buildAndFlash();
+  else { mcu.paused = !mcu.paused; updateRunButton(); addLog(mcu.paused ? "一時停止しました。" : "実行を再開しました。", "warn"); }
+});
+document.getElementById("btn-reset").addEventListener("click", function () {
+  mcu.reset();
+  addLog("MCLR リセットを実行しました。", "warn");
+  document.getElementById("status-build").textContent = "リセット済み";
+  document.getElementById("status-build").style.color = "#7d8ba1";
+  document.getElementById("chip-syntax").textContent = "構文チェック完了";
+  document.getElementById("chip-syntax").className = "chip chip-ok";
+});
+document.getElementById("btn-next-error").addEventListener("click", nextDiagnostic);
+document.getElementById("btn-clear-problems").addEventListener("click", function () {
+  consoleLines.length = 0;
+  renderConsole();
+  showToast("ビルドログをクリアしました");
+});
+document.getElementById("sample-select").addEventListener("change", function (e) {
+  const key = e.target.value;
+  const text = key === "__blank" ? BLANK : PRESETS[key];
+  if (!text) return;
+  if (!maybeDiscard()) { e.target.value = "default"; return; }
+  const name = key === "__blank" ? "main.c" : key + ".c";
+  setEditorText(text, name, null);
+  showToast("サンプルを読み込みました: " + e.target.options[e.target.selectedIndex].text);
+});
+document.getElementById("speed-slider").addEventListener("input", function (e) {
+  mcu.speedFactor = Number(e.target.value);
+  document.getElementById("speed-val").textContent = mcu.speedFactor.toFixed(1) + "x";
+});
+
+// ===================== EDITOR EVENTS =====================
+let autosaveTimer = null;
+codeEditor.addEventListener("input", function () {
+  updateDirty();
+  runLiveSyntaxCheck();
+  updateStatusCursor();
+  document.getElementById("status-saved").textContent = "編集中";
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(function () {
+    try {
+      localStorage.setItem("pic16f18857_autosave", codeEditor.value);
+      localStorage.setItem("pic16f18857_filename", fileName);
+      document.getElementById("status-saved").textContent = "自動復旧用に保存済み";
+    } catch (e) { document.getElementById("status-saved").textContent = ""; }
+  }, 600);
+});
+codeEditor.addEventListener("scroll", syncEditorDecorations);
+codeEditor.addEventListener("click", updateStatusCursor);
+codeEditor.addEventListener("keyup", updateStatusCursor);
+codeEditor.addEventListener("select", updateStatusCursor);
+codeEditor.addEventListener("keydown", function (e) {
+  if (e.key === "Tab") {
+    e.preventDefault();
+    codeEditor.setRangeText("    ", codeEditor.selectionStart, codeEditor.selectionEnd, "end");
+    codeEditor.dispatchEvent(new Event("input"));
+  }
+  if (e.key === "F5") { e.preventDefault(); buildAndFlash(); }
+  if (e.key === " " && !e.ctrlKey && !e.metaKey && !e.altKey && mcu.running) {
+    e.preventDefault();
+    mcu.paused = !mcu.paused;
+    updateRunButton();
+    addLog(mcu.paused ? "一時停止しました。" : "実行を再開しました。", "warn");
+  }
+});
+window.addEventListener("keydown", function (e) {
+  const mod = e.ctrlKey || e.metaKey;
+  const key = (e.key || "").toLowerCase();
+  if (mod && key === "s") { e.preventDefault(); saveFile(e.shiftKey); return; }
+  if (mod && key === "o") { e.preventDefault(); openWithPicker(); return; }
+  if (mod && e.altKey && key === "n") { e.preventDefault(); document.getElementById("file-new").click(); return; }
+  if (mod && key === "r") { e.preventDefault(); document.getElementById("btn-reset").click(); return; }
+  if (mod && key === "f") { e.preventDefault(); nextDiagnostic(); return; }
+  if (document.activeElement === codeEditor) return;
+  const n = Number(e.key);
+  if (n >= 1 && n <= 8) { mcu.PORTA |= (1 << (n - 1)); updateRegisterUI(); }
+  if (e.key === " " && mcu.running) { e.preventDefault(); mcu.paused = !mcu.paused; updateRunButton(); }
+});
+window.addEventListener("keyup", function (e) {
+  if (document.activeElement === codeEditor) return;
+  const n = Number(e.key);
+  if (n >= 1 && n <= 8) { mcu.PORTA &= ~(1 << (n - 1)); updateRegisterUI(); }
+});
+window.addEventListener("beforeunload", function (e) {
+  if (codeEditor.value !== lastSavedText) { e.preventDefault(); e.returnValue = ""; }
+});
+
+// ===================== HELP / INIT =====================
+document.getElementById("btn-help").addEventListener("click", function () { document.getElementById("help-modal").style.display = "block"; });
+document.getElementById("help-close").addEventListener("click", function () { document.getElementById("help-modal").style.display = "none"; });
+document.getElementById("help-modal").addEventListener("click", function (e) { if (e.target.id === "help-modal") e.target.style.display = "none"; });
+
+buildHardwareStatic();
+requestAnimationFrame(drawMatrix);
+let startText = PRESETS.default;
+let startName = "main.c";
+try {
+  const recovery = localStorage.getItem("pic16f18857_autosave");
+  if (recovery !== null && recovery !== PRESETS.default) {
+    const recoveryName = localStorage.getItem("pic16f18857_filename") || "main.c";
+    if (confirm("前回の編集内容が残っています。復元しますか？")) { startText = recovery; startName = recoveryName; }
+  }
+} catch (e) { /* localStorage 不可の環境では初期サンプルを使用 */ }
+setEditorText(startText, startName, null);
+updateRegisterUI();
+addLog("開発スタジオを起動しました。", "system");
+addLog("ファイル操作: 開く / 保存 / 名前を付けて保存 / .c 書き出し / 自動復旧", "info");
+addLog("ビルドエラーはソースの「行:列」と該当行・該当位置を表示します。", "info");
+
+</script>
+</body>
+</html>
